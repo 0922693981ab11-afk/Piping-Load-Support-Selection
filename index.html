@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>機電配管承載與支架選型系統 - 吳啓仲 監製</title>
+  <title>機電配管承載與支架選型系統 - 程式開發者 吳啓仲</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- React & ReactDOM 18 CDN -->
@@ -111,25 +111,25 @@
       ]
     };
 
-    // --- 精確硬編碼：橫向配管支撐間隔與吊桿對照表 ---
+    // --- 精確硬編碼：橫向配管支撐間隔與吊桿對照表 (從嚴設計更新) ---
     const spacingDatabase = {
       "鍍鋅鋼管 (CNS 6445 / CNS 4626)": [
-        { limit: 20, spacing: 1.8, rod: "9mm (3/8\")" },
-        { limit: 40, spacing: 2.0, rod: "9mm (3/8\")" },
-        { limit: 80, spacing: 3.0, rod: "9mm (3/8\")" },
-        { limit: 150, spacing: 4.0, rod: "12mm (1/2\")" },
-        { limit: 999, spacing: 5.0, rod: "15mm (5/8\")" }
+        { limit: 20, spacing: 1.5, rod: "9mm (3/8\")" }, // 原1.8 -> 從嚴1.5
+        { limit: 40, spacing: 1.8, rod: "9mm (3/8\")" }, // 原2.0 -> 從嚴1.8
+        { limit: 80, spacing: 2.5, rod: "9mm (3/8\")" }, // 原3.0 -> 從嚴2.5
+        { limit: 150, spacing: 3.5, rod: "12mm (1/2\")" }, // 原4.0 -> 從嚴3.5
+        { limit: 999, spacing: 4.0, rod: "15mm (5/8\")" }  // 原5.0 -> 從嚴4.0
       ],
       "鍍鋅鋼管 (EMT電線管)": [
-        { limit: 20, spacing: 1.0, rod: "9mm (3/8\")" },
-        { limit: 40, spacing: 1.5, rod: "9mm (3/8\")" },
-        { limit: 50, spacing: 2.0, rod: "9mm (3/8\")" },
-        { limit: 999, spacing: 2.0, rod: "9mm (3/8\")" }
+        { limit: 20, spacing: 0.8, rod: "9mm (3/8\")" },
+        { limit: 40, spacing: 1.2, rod: "9mm (3/8\")" },
+        { limit: 50, spacing: 1.5, rod: "9mm (3/8\")" },
+        { limit: 999, spacing: 1.5, rod: "9mm (3/8\")" }
       ],
       "排煙風管": [
-        { limit: 300, spacing: 3.0, rod: "9mm (3/8\")" },
-        { limit: 750, spacing: 2.7, rod: "9mm (3/8\")" },
-        { limit: 999, spacing: 2.4, rod: "9mm (3/8\")" }
+        { limit: 300, spacing: 2.5, rod: "9mm (3/8\")" },
+        { limit: 750, spacing: 2.2, rod: "9mm (3/8\")" },
+        { limit: 999, spacing: 2.0, rod: "9mm (3/8\")" }
       ]
     };
 
@@ -176,8 +176,8 @@
         insulationWeight: 0,
         totalWeight: 0, 
         designLoadPerMeter: 0,
-        recommendedSpacing: 4.0,
-        activeSpacing: 4.0,
+        recommendedSpacing: 3.5, // 初始配合從嚴預設值
+        activeSpacing: 3.5,
         nodeLoad: 0 
       });
       
@@ -203,7 +203,7 @@
         const ruleList = spacingDatabase[spacingMaterial] || spacingDatabase["鍍鋅鋼管 (CNS 6445 / CNS 4626)"];
         const nominalValue = parseInt(pipe.sizeStr);
         
-        let recSpacing = 4.0;
+        let recSpacing = 3.5;
         let matchedRule = ruleList.find(r => nominalValue <= r.limit);
         if (matchedRule) {
           recSpacing = matchedRule.spacing;
@@ -833,9 +833,9 @@
                         <div className="bg-emerald-50/50 p-3 rounded-2xl border border-emerald-100 flex justify-between items-center transition-all">
                           <div>
                             <span className="block text-xs font-black text-emerald-800">
-                              {spacingMaterial.split(' (')[0]} 規範規定最大支撐間距
+                              {spacingMaterial.split(' (')[0]} 從嚴規範最大支撐間距
                             </span>
-                            <span className="text-[10px] text-emerald-600 font-bold">（依據國家標準與配管施工大樣規章核定）</span>
+                            <span className="text-[10px] text-emerald-600 font-bold">（依據國家標準及設計規範精確比對）</span>
                           </div>
                           <div className="text-right">
                             <span className="text-2xl font-black text-emerald-800">{calcData.recommendedSpacing.toFixed(1)}</span>
@@ -906,7 +906,7 @@
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Excel 格式材料規格比對清單</span>
-                          <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-lg">吳啓仲 監製核定</span>
+                          <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-lg">容許最大間距</span>
                         </div>
                         <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-inner no-scrollbar">
                           <table className="min-w-full divide-y divide-slate-200 text-xs font-mono whitespace-nowrap">
@@ -1101,6 +1101,7 @@
                       吳啓仲 工程現場查驗盲點與工法規範：
                     </h3>
                     <ul className="text-xs text-slate-700 space-y-2 list-disc list-inside font-semibold leading-relaxed">
+                      <li><strong>消防管路從嚴設計與壓接/溝槽規範：</strong> 依據消防工程管路研究，對於壓接(Press Fit)管端銳角應予打磨以免損傷止水環；溝槽式(Grooved)接頭在承受加壓時易產生蛇行應力，支架最大容許間距已由系統全面「從嚴縮減」(例: 100A降至3.5M以下)，確保水錘衝擊時之絕對安全。</li>
                       <li><strong>結構樑硬支撐必要性：</strong> 凡管線跨越主體結構樑，必須強制採用型鋼門型架或三角托架（SP26 / SP40 / SP42），嚴禁單純使用下吊全牙螺桿懸吊，以防地震側向剪力折損吊桿。</li>
                       <li><strong>防電位差腐蝕隔離：</strong> 不鏽鋼管 (SUS304) 電位與鍍鋅型鋼差異巨大，接觸面必須墊設絕緣橡膠片或橡塑墊木，嚴禁直接與金屬硬接觸，避免異種金屬電位咬穿管壁。</li>
                       <li><strong>銲接及冷鍍鋅防腐：</strong> 所有型鋼及焊接底板若經現場砂輪切割、滿焊結合，表面鋅防護層即遭破壞，必須清除藥渣後塗刷兩道以上富鋅防銹底漆（含鋅量達90%以上）進行修補。</li>
