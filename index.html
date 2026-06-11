@@ -195,18 +195,30 @@
         activeRuleName: "鍍鋅鋼管/RSG厚管"
       });
 
+      // 新增管線列
       const addPipeRow = () => {
         setPipeList([...pipeList, { id: Date.now(), standard: "CNS 6445 (一般配管碳鋼管)", pipeIndex: 5, qty: 1 }]);
       };
       
+      // 刪除管線列
       const removePipeRow = (targetId) => {
         if (pipeList.length > 1) {
           setPipeList(pipeList.filter(pipeItem => pipeItem.id !== targetId));
         }
       };
 
+      // 安全更新管線屬性
       const updatePipeRow = (targetId, field, val) => {
-        setPipeList(pipeList.map(pipeItem => pipeItem.id === targetId ? { ...pipeItem, [field]: val } : pipeItem));
+        setPipeList(prevList => prevList.map(pipeItem => 
+          pipeItem.id === targetId ? { ...pipeItem, [field]: val } : pipeItem
+        ));
+      };
+
+      // 複合更新 (同時換材質與歸零管徑)
+      const handleStandardChange = (targetId, newStandard) => {
+        setPipeList(prevList => prevList.map(pipeItem => 
+          pipeItem.id === targetId ? { ...pipeItem, standard: newStandard, pipeIndex: 0 } : pipeItem
+        ));
       };
       
       // 當模式改變時處理防呆
@@ -352,6 +364,7 @@
         else if (nodeL <= 1255) { res.rod = { code: "T6100", diameter: "3/4\"", load: "1255 kg" }; res.couplingNut = { code: "SK60", specs: "3/4\"", load: "1130 kg" }; }
         else { res.rod = { code: "T6100 (雙拼/加粗)", diameter: "3/4\" x2", load: "2500 kg+" }; res.couplingNut = { code: "SK60", specs: "3/4\"", load: "1130 kg" }; }
 
+        // 型鋼槽鋼或角鋼判定 (補回非硬支撐時的槽鋼邏輯)
         if (nodeL > 2000) { res.channel = { code: "H-BEAM 150x150", specs: "H型鋼", weight: "31.5 kg/m", plate: "300x300x20t" }; }
         else if (nodeL > 1200) { res.channel = { code: "E1507565 (雙拼)", specs: "150x75 槽鋼雙拼", weight: "37.2 kg/m", plate: "250x250x12t" }; }
         else if (nodeL > 600) { res.channel = { code: "E125656", specs: "125x65x6t", weight: "13.4 kg/m", plate: "200x200x6t" }; }
@@ -411,9 +424,20 @@
 
       const getCADDetails = () => {
         let details = {
-          beamHanger: { member: matchedCatalog.channel.code, basePlate: matchedCatalog.channel.plate, bolt: "M16/M20" },
-          riserClamp: { code: `SP27-R`, clampThick: calcData.primaryInch >= 6.0 ? "6mm" : "4mm", boltSize: calcData.primaryInch >= 6.0 ? "1/2\"" : "3/8\"" },
-          cantilever: { code: "SP42", angle: matchedCatalog.angle.code }
+          beamHanger: { 
+            member: `${matchedCatalog.channel.code} (${matchedCatalog.channel.specs.split(' ')[0]})`, 
+            basePlate: matchedCatalog.channel.plate, 
+            bolt: "M16/M20" 
+          },
+          riserClamp: { 
+            code: "SP27-R", 
+            clampThick: calcData.primaryInch >= 6.0 ? "6mm" : "4mm", 
+            boltSize: calcData.primaryInch >= 6.0 ? "1/2\"" : "3/8\"" 
+          },
+          cantilever: { 
+            code: "SP42", 
+            angle: `${matchedCatalog.angle.code} (${matchedCatalog.angle.specs.split(' ')[0]})` 
+          }
         };
         return details;
       };
@@ -465,7 +489,7 @@
                     <path d="M135,135 C135,110 185,110 185,135 L185,175 C185,200 135,200 135,175 Z" fill="none" stroke="#64748b" strokeWidth="4" />
                     <line x1="130" y1="135" x2="190" y2="135" stroke="#475569" strokeWidth="3" />
                     <circle cx="160" cy="162" r="22" fill={pipeFill} stroke="#1e293b" strokeWidth="2" />
-                    {hasHeavyValve && <rect x="140" y="142" width="40" height="40" fill="none" stroke="#ef4444" strokeWidth="3" strokeDasharray="4,2"/>}
+                    {useInsulation && <circle cx="160" cy="162" r="28" fill="none" stroke="#a855f7" strokeWidth="2" strokeDasharray="3,3" />}
                   </g>
                   <rect x="5" y="215" width="310" height="30" fill="#1e293b" rx="6" />
                   <text x="15" y="233" fill="#38bdf8" className="text-xs font-bold">工法：常規全牙螺桿單管下吊式</text>
@@ -485,6 +509,7 @@
                   <rect x="62" y="61" width="10" height="105" fill="#1e293b" stroke="#cbd5e1" strokeWidth="2" />
                   <rect x="248" y="61" width="10" height="105" fill="#1e293b" stroke="#cbd5e1" strokeWidth="2" />
                   <rect x="45" y="165" width="230" height="14" fill="#334155" stroke="#94a3b8" strokeWidth="2.5" />
+                  <text x="80" y="195" fill="#94a3b8" className="text-[9px] font-mono">橫擔:{cad.beamHanger.member} | 底板:{cad.beamHanger.basePlate}</text>
                   
                   {Array.from({length: visualPipes}).map((_, idx) => {
                     const spacingVal = visualPipes > 1 ? 210 / (visualPipes - 1) : 0;
@@ -510,6 +535,7 @@
                   <line x1="60" y1="35" x2="60" y2="155" stroke="#cbd5e1" strokeWidth="3" strokeDasharray="2,2" />
                   <line x1="260" y1="35" x2="260" y2="155" stroke="#cbd5e1" strokeWidth="3" strokeDasharray="2,2" />
                   <rect x="40" y="150" width="240" height="15" fill="#1e293b" stroke="#64748b" strokeWidth="2" rx="1" />
+                  <text x="80" y="175" fill="#94a3b8" className="text-[9px] font-mono">橫擔:{cad.beamHanger.member}</text>
                   
                   {Array.from({length: visualPipes}).map((_, idx) => {
                     const spacingVal = visualPipes > 1 ? 180 / (visualPipes - 1) : 0;
@@ -537,6 +563,7 @@
                 <text x="10" y="110" fill="#cbd5e1" className="text-[10px] font-bold rotate-90 origin-center">RC 結構樑/牆面</text>
                 <polygon points="80,70 230,120 80,170" fill="#1e293b" stroke="#cbd5e1" strokeWidth={isHardSupport? "2.5" : "1"} />
                 <line x1="80" y1="120" x2="230" y2="120" stroke={isHardSupport?"#10b981":"#38bdf8"} strokeWidth="4" />
+                <text x="90" y="145" fill="#10b981" className="text-[9px] font-mono">SP42-50x50x6t 角鋼架</text>
                 
                 {Array.from({length: visualPipes}).map((_, idx) => {
                     const cx = 115 + (idx * 35);
@@ -577,7 +604,7 @@
       };
 
       const generateClampString = () => {
-        if (styleId === "riser") return `SP27 立管夾 (約 ${calcData.primaryInch}")`;
+        if (styleId === "riser") return `SP27 立管夾 (最大至 ${calcData.primaryInch}")`;
         
         let components = [];
         for (let i = 0; i < pipeList.length; i++) {
@@ -656,7 +683,7 @@
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mt-2">
                           <div className="md:col-span-12">
                             <label className="block text-[10px] font-black text-slate-500 mb-1">材質/規範</label>
-                            <select className="w-full border border-slate-300 rounded-lg p-2 bg-white font-bold focus:border-emerald-500 focus:ring-2 outline-none text-xs" value={pipeItem.standard} onChange={(e) => { updatePipeRow(pipeItem.id, "standard", e.target.value); updatePipeRow(pipeItem.id, "pipeIndex", 0); }}>
+                            <select className="w-full border border-slate-300 rounded-lg p-2 bg-white font-bold focus:border-emerald-500 focus:ring-2 outline-none text-xs" value={pipeItem.standard} onChange={(e) => handleStandardChange(pipeItem.id, e.target.value)}>
                               {Object.keys(pipeData).map(stdName => <option key={stdName} value={stdName}>{stdName}</option>)}
                             </select>
                           </div>
@@ -911,19 +938,29 @@
 
                               <tr className="hover:bg-slate-50 transition-colors">
                                 <td className="px-3 py-3 text-slate-500 font-bold border-r border-slate-200">A-03</td>
-                                <td className="px-3 py-3 font-bold text-slate-800 border-r border-slate-200">承重主力型鋼</td>
+                                <td className="px-3 py-3 font-bold text-slate-800 border-r border-slate-200">承重主力型鋼 / 托架</td>
                                 <td className="px-3 py-3 text-slate-700 border-r border-slate-200">
-                                  {isHardSupport ? (
-                                    <span className={`font-extrabold ${calcData.nodeLoad > 2000 ? 'text-red-700' : 'text-amber-700'}`}>{cad.beamHanger.member}</span>
+                                  {styleId === "trapeze" ? (
+                                    <span className={`font-extrabold ${calcData.nodeLoad > 2000 ? 'text-red-700' : 'text-amber-700'}`}>
+                                      {matchedCatalog.channel.code} <span className="text-xs font-normal ml-1 text-slate-600">({matchedCatalog.channel.specs})</span>
+                                    </span>
+                                  ) : styleId === "cantilever" ? (
+                                    <span className="font-extrabold text-slate-700">
+                                      {matchedCatalog.angle.code} <span className="text-xs font-normal ml-1 text-slate-500">({matchedCatalog.angle.specs})</span>
+                                    </span>
+                                  ) : isHardSupport && styleId === "single" ? (
+                                    <span className="font-extrabold text-amber-700">
+                                      {matchedCatalog.channel.code} <span className="text-xs font-normal ml-1 text-slate-500">(直裝短槽鋼)</span>
+                                    </span>
                                   ) : (
-                                    <span className="font-extrabold text-slate-700">{matchedCatalog.angle.code}</span>
+                                    <span className="text-slate-400 font-mono text-[10px]">無 / 視現場大樣</span>
                                   )}
                                 </td>
                                 <td className="px-3 py-3 text-slate-600 border-r border-slate-200">
-                                  {isHardSupport ? (calcData.nodeLoad > 2000 ? "超重載級 (H型鋼)" : "結構樑重載級") : matchedCatalog.angle.weight}
+                                  {styleId === "trapeze" || (isHardSupport && styleId === "single") ? matchedCatalog.channel.weight : styleId === "cantilever" ? matchedCatalog.angle.weight : "-"}
                                 </td>
                                 <td className="px-3 py-3 text-slate-500 font-bold">
-                                  {isHardSupport ? "SP26 / SP40 樑下架" : "SP42 三角托架"}
+                                  {styleId === "trapeze" ? "SP26 / SP40 門型排架" : styleId === "cantilever" ? "SP42 三角托架" : isHardSupport && styleId === "single" ? "SP28 樑下短鋼" : "SP27 / SP28"}
                                 </td>
                               </tr>
 
