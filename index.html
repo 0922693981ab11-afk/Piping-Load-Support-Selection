@@ -27,13 +27,21 @@
       background: #94a3b8;
       cursor: not-allowed;
     }
-    /* 隱藏捲軸但保留捲動功能 */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
+    /* 優化捲軸樣式，確保可以清楚拖動檢視 */
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 10px;
     }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 8px;
+      border: 2px solid #f8fafc;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
     }
   </style>
 </head>
@@ -899,7 +907,7 @@
                           <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Excel 格式材料規格比對清單</span>
                           <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 shadow-sm">程式開發者 吳啓仲</span>
                         </div>
-                        <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-inner no-scrollbar">
+                        <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-inner custom-scrollbar pb-2">
                           <table className="min-w-full divide-y divide-slate-200 text-xs font-mono whitespace-nowrap">
                             <thead className="bg-slate-100 border-b border-slate-200">
                               <tr>
@@ -1033,7 +1041,7 @@
                           <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Excel 內部力學公式試算底稿</span>
                           <span className="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-lg">容許最大間距</span>
                         </div>
-                        <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-inner no-scrollbar">
+                        <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-inner custom-scrollbar pb-2">
                           <table className="min-w-full divide-y divide-slate-200 text-xs font-mono whitespace-nowrap">
                             <thead className="bg-slate-100 border-b border-slate-200">
                               <tr>
